@@ -43,3 +43,4 @@ if __name__ == '__main__':
             
     t = np.arange(0, len(OBS))*env.Ts
     plt.plot(t,np.array(OBS))
+    plt.show()

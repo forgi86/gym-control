@@ -43,4 +43,7 @@ if __name__ == '__main__':
             
     t = np.arange(0, len(OBS))*env.Ts
     plt.plot(t,np.array(OBS))
+    plt.xlabel("Time (s)")
+    plt.ylabel("Angle (rad)")
+    plt.grid(True)
     plt.show()

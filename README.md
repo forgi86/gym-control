@@ -28,7 +28,7 @@ Inspired from examples found at https://github.com/matthiasplappert/keras-rl/tre
 ### CartPoleControl
 
 A cart-pole system. The control objective is to stabilize the pendulum in the upright vertical position (around $theta=0$).
-![Alt text](/img/cart-pole.svg?raw=true "Schematics of the cart-pole system")
+![Schematics of the cart-pole system](gym-control/img/cart-pole.svg?raw=true)
 
 $$p(x) = (1+e)/(1. + e^(x+1))$$
 

@@ -45,6 +45,12 @@ F_MAX = 10
 F_MIN = -F_MAX
 
 TS = 1e-3
+
+def wrap_to_pi(angle_2pi):
+
+    angle_pi = (angle_2pi + np.pi) % (2 * np.pi ) - np.pi
+    return angle_pi
+
 class CartPoleEnv(gym.Env):
     """
     Define a simple Banana environment.
@@ -103,7 +109,7 @@ class CartPoleEnv(gym.Env):
         x_new = x_old + der*TS
         
         # reward dynamics
-        reward = -np.abs(theta) # 
+        reward = np.pi - np.abs(wrap_to_pi(theta)) # pi - abs of the angle in range (-pi, pi)
         
         # done check
         done = False

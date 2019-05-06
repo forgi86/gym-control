@@ -1,5 +1,4 @@
-This repository contains a PIP package which is an OpenAI environment for
-simulating an enironment in which bananas get sold.
+This repository contains a PIP package which contains a collection of control theory environments compatible with the OpenAI gym toolkit.
 
 
 ## Installation
@@ -16,22 +15,21 @@ pip install -e .
 
 ```
 import gym
-import gym_banana
+import gym_control
 
-env = gym.make('Banana-v0')
+env = gym.make("CartPoleControl-v0")
 ```
 
-See https://github.com/matthiasplappert/keras-rl/tree/master/examples for some
-examples.
+Inspired from examples found at https://github.com/matthiasplappert/keras-rl/tree/master/examples
 
 
-## The Environment
+## The Environments
 
-Imagine you are selling bananas. One at a time. And the bananas get bad pretty
-quickly. Let's say in 3 days. The probability that I will sell the banana
-is given by
+### CartPoleControl
+
+A cart-pole system. The control objective is to stabilize the pendulum in the upright vertical position (around $theta=0$).
+![Alt text](/img/cart-pole.svg?raw=true "Schematics of the cart-pole system")
 
 $$p(x) = (1+e)/(1. + e^(x+1))$$
 
-where x-1 is my profit. This x-1 is my reward. If I don't sell the
-banana, the agent gets a reward of -1 (the price of the banana).
+

@@ -12,3 +12,8 @@ register(
     id='CartPoleControl-v0',
     entry_point='gym_control.envs:CartPoleEnv',
 )
+
+register(
+    id='ArxIdentification-v0',
+    entry_point='gym_control.envs:ArxIdentificationEnv',
+)

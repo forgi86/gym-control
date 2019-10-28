@@ -9,16 +9,14 @@ Each episode is selling a single banana.
 
 # core modules
 import logging.config
-import math
+import numpy as np
 import pkg_resources
-from gym.utils import seeding
 
 # 3rd party modules
+from gym.utils import seeding
 from gym import spaces
 import cfg_load
 import gym
-import numpy as np
-
 
 path = 'config.yaml'  # always use slash in packages
 filepath = pkg_resources.resource_filename('gym_control', path)
@@ -26,11 +24,41 @@ config = cfg_load.load(filepath)
 logging.config.dictConfig(config['LOGGING'])
 
 
+def chol_encode(SIG):
+    n_par = SIG.shape[0]
+    L = np.linalg.cholesky(SIG)
+    theta_L = L[np.tril_indices(n_par)]
+    return theta_L
+
+
+def chol_decode(theta_L, n_par):
+    L = np.zeros((n_par, n_par))
+    L[np.tril_indices(n_par)] = theta_L
+    SIG = L @ np.transpose(L)
+    return SIG
+
+
+def logchol_encode(SIG):
+    n_par = SIG.shape[0]
+    L = np.linalg.cholesky(SIG)
+    theta_L = L[np.tril_indices(n_par)]
+    idx_diag = np.arange(n_par)
+    idx_diag = (idx_diag + 1) * (idx_diag + 2) // 2 - 1
+    theta_L[idx_diag] = np.log(theta_L[idx_diag])
+    return theta_L
+
+
+def logchol_decode(theta_L, n_par):
+    idx_diag = np.arange(n_par)
+    idx_diag = (idx_diag + 1) * (idx_diag + 2) // 2 - 1
+    theta_L[idx_diag] = np.exp(theta_L[idx_diag])
+    L = np.zeros((n_par, n_par))
+    L[np.tril_indices(n_par)] = theta_L
+    SIG = L @ np.transpose(L)
+    return SIG
 
 class ArxIdentificationEnv(gym.Env):
     """
-    Define a simple Banana environment.
-
     The environment defines which actions can be taken at which point and
     when the agent receives which reward.
     """
@@ -44,7 +72,7 @@ class ArxIdentificationEnv(gym.Env):
         self.A = 0.9
         self.B = 0.1
 
-        self.std_noise = 0.03 #  noise standard deviation
+        self.std_noise = 0.015 #  noise standard deviation
         self.std_x0 = 0.3
         self.S0 = np.diag([0.01, 0.01]) # parameter random walk covariance
 
@@ -69,7 +97,7 @@ class ArxIdentificationEnv(gym.Env):
         x_old = self.sys_state
         x_new = self.A * x_old + self.B * u + self.std_noise*np.random.randn()
 
-        phi_t = np.array([x_new, u]).reshape(1,-1)
+        phi_t = np.array([x_new, u]).reshape(1, -1)
         I_t = phi_t * np.transpose(phi_t)
 
         if self.leaky == 'KAL':
@@ -86,10 +114,13 @@ class ArxIdentificationEnv(gym.Env):
         self.I = I_new
         self.sys_state = x_new
 
+        self.I_state = logchol_encode(self.I) #self.sys_state
         self.env_state[0] = self.sys_state
-        self.env_state[1] = self.I[0, 0]
-        self.env_state[2] = self.I[0, 1]
-        self.env_state[3] = self.I[1, 1]
+        self.env_state[1:] = self.I_state
+
+#        self.env_state[1] = self.I[0, 0]
+#        self.env_state[2] = self.I[0, 1]
+#        self.env_state[3] = self.I[1, 1]
 
         # done check
         done = False
@@ -106,17 +137,17 @@ class ArxIdentificationEnv(gym.Env):
 
     def reset(self):
         self.sys_state = self.std_x0*np.random.randn(1) # initial system state
-        self.sys_state = np.clip(self.sys_state, -1, 1)
+        self.sys_state = np.clip(self.sys_state, self.low_state, self.high_state)
         self.I0 = np.diag([1.0, 1.0]) # initial information matrix
         self.I = np.copy(self.I0)
+        self.I_state = logchol_encode(self.I)
 
         self.env_state = np.empty(4)
         self.env_state[0] = self.sys_state
-        self.env_state[1] = self.I[0, 0]
-        self.env_state[2] = self.I[0, 1]
-        self.env_state[3] = self.I[1, 1]
+        self.env_state[1:] = self.I_state
 
         self.count = 0 # ?
+
         return np.copy(self.env_state)
 
     def _render(self, mode='human', close=False):

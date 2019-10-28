@@ -44,14 +44,15 @@ class ArxIdentificationEnv(gym.Env):
         self.A = 0.9
         self.B = 0.1
 
-        self.std_noise = 1.0 #  noise standard deviation
+        self.std_noise = 0.03 #  noise standard deviation
+        self.std_x0 = 0.3
         self.S0 = np.diag([0.01, 0.01]) # parameter random walk covariance
 
-        self.min_action = -10
-        self.max_action = 10
+        self.min_action = -1
+        self.max_action =  1
 
-        self.low_state = -10
-        self.high_state = 10
+        self.low_state = -2
+        self.high_state = 2
 
         self.leaky = leaky
 
@@ -94,7 +95,7 @@ class ArxIdentificationEnv(gym.Env):
         done = False
 
         self.count = self.count + 1
-        if self.count == 100:
+        if self.count == 300:
             done = True
 
         return np.copy(self.env_state), reward, done, {}
@@ -104,7 +105,8 @@ class ArxIdentificationEnv(gym.Env):
         return [seed]
 
     def reset(self):
-        self.sys_state = np.random.randn(1) # initial system state
+        self.sys_state = self.std_x0*np.random.randn(1) # initial system state
+        self.sys_state = np.clip(self.sys_state, -1, 1)
         self.I0 = np.diag([1.0, 1.0]) # initial information matrix
         self.I = np.copy(self.I0)
 

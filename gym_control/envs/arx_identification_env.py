@@ -26,11 +26,6 @@ config = cfg_load.load(filepath)
 logging.config.dictConfig(config['LOGGING'])
 
 
-def get_chance(x):
-    """Get probability that a banana will be sold at price x."""
-    e = math.exp(1)
-    return (1.0 + e) / (1. + math.exp(x + 1))
-
 
 class ArxIdentificationEnv(gym.Env):
     """
@@ -40,7 +35,7 @@ class ArxIdentificationEnv(gym.Env):
     when the agent receives which reward.
     """
 
-    def __init__(self):
+    def __init__(self, leaky='NO'):
         self.__version__ = "0.1.0"
         logging.info("ControlEnv - Version {}".format(self.__version__))
 
@@ -58,9 +53,10 @@ class ArxIdentificationEnv(gym.Env):
         self.low_state = -10
         self.high_state = 10
 
+        self.leaky = leaky
 
         self.action_space = spaces.Box(low=self.min_action, high=self.max_action, shape=(1,), dtype=np.float32)
-        self.observation_space = spaces.Box(low=self.low_state, high=self.high_state, shape=(1,), dtype=np.float32)
+        self.observation_space = spaces.Box(low=self.low_state, high=self.high_state, shape=(4,), dtype=np.float32)
 
         self.seed()
         self.reset()
@@ -69,46 +65,62 @@ class ArxIdentificationEnv(gym.Env):
         u = action
 
         # dynamic equations
-        x_old = self.state[0]
+        x_old = self.sys_state
         x_new = self.A * x_old + self.B * u + self.std_noise*np.random.randn()
 
         phi_t = np.array([x_new, u]).reshape(1,-1)
         I_t = phi_t * np.transpose(phi_t)
 
-        #I_new = 0.9*np.copy(self.I) + I_t
-        I_new = np.linalg.inv(np.linalg.inv(self.I + I_t) + self.S0)
+        if self.leaky == 'KAL':
+            I_new = np.linalg.inv(np.linalg.inv(self.I + I_t) + self.S0)
+        elif self.leaky == 'RLS':
+            I_new =  0.9*np.copy(self.I) + I_t
+        elif self.leaky == 'NO':
+            I_new = self.I + I_t
+        else:
+            raise ValueError("Wrong option for leaky parameter!")
 
-        #reward = np.log(np.linalg.det(I_new)) - np.log(np.linalg.det(self.I))
         reward = np.min(np.linalg.eigvals(I_new)) - np.min(np.linalg.eigvals(self.I))
 
-        #self.I = I_new
-        self.I = I_new#np.linalg.inv(np.linalg.inv(I_new) + self.S0) # random walk in the parameter space
+        self.I = I_new
+        self.sys_state = x_new
 
-        self.state = np.array([x_new]) # also info matrix is a state!
+        self.env_state[0] = self.sys_state
+        self.env_state[1] = self.I[0, 0]
+        self.env_state[2] = self.I[0, 1]
+        self.env_state[3] = self.I[1, 1]
 
         # done check
         done = False
+
         self.count = self.count + 1
-        if self.count == 1000:
+        if self.count == 100:
             done = True
 
-        return self.state, reward, done, {}
+        return np.copy(self.env_state), reward, done, {}
 
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
 
     def reset(self):
-        self.state = np.random.randn(1) # initial system state
+        self.sys_state = np.random.randn(1) # initial system state
         self.I0 = np.diag([1.0, 1.0]) # initial information matrix
         self.I = np.copy(self.I0)
+
+        self.env_state = np.empty(4)
+        self.env_state[0] = self.sys_state
+        self.env_state[1] = self.I[0, 0]
+        self.env_state[2] = self.I[0, 1]
+        self.env_state[3] = self.I[1, 1]
+
         self.count = 0 # ?
-        return np.array(self.state)
+        return np.copy(self.env_state)
 
     def _render(self, mode='human', close=False):
         return
 
     def _get_state(self):
         """Get the observation."""
-        ob = self.x
+        ob = self.env_state
         return ob

@@ -17,7 +17,7 @@ ACT = []
 I = []
 
 if __name__ == '__main__':
-    env_arx = gym.make("ArxIdentification-v0")
+    env_arx = gym.make("ArxIdentification-v0", leaky='NO')
     env = env_arx
 
     total_reward = 0.0
@@ -58,7 +58,7 @@ if __name__ == '__main__':
     t = np.arange(0, len(OBS))
 
     fig, ax = plt.subplots(4, 1)
-    ax[0].plot(t, OBS)
+    ax[0].plot(t, OBS[:, 0])
     ax[0].set_xlabel("Time index (-)")
     ax[0].set_ylabel("State (-)")
     ax[0].grid(True)

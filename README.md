@@ -29,3 +29,8 @@ Inspired from examples found at https://github.com/matthiasplappert/keras-rl/tre
 
 A cart-pole system. The control objective is to stabilize the pendulum in the upright vertical position (around $phi=0$).
 ![Schematics of the inverted pendulum on a cart.](img/cart_pole.svg)
+
+
+### ArxIdentification
+
+Given an ARX system, try to maximize the information matrix!

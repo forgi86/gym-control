@@ -17,3 +17,8 @@ register(
     id='ArxIdentification-v0',
     entry_point='gym_control.envs:ArxIdentificationEnv',
 )
+
+register(
+    id='ExperimentDesign-v0',
+    entry_point='gym_control.envs:ExperimentDesignEnv',
+)

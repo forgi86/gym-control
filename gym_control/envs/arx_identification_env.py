@@ -142,7 +142,7 @@ class ArxIdentificationEnv(gym.Env):
         self.I = np.copy(self.I0)
         self.I_state = logchol_encode(self.I)
 
-        self.env_state = np.empty(4)
+        self.env_state = np.zeros(4)
         self.env_state[0] = self.sys_state
         self.env_state[1:] = self.I_state
 

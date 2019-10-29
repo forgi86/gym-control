@@ -63,7 +63,7 @@ class ArxIdentificationEnv(gym.Env):
     when the agent receives which reward.
     """
 
-    def __init__(self, leaky='NO'):
+    def __init__(self, leaky='NO', episode_len=300):
         self.__version__ = "0.1.0"
         logging.info("ControlEnv - Version {}".format(self.__version__))
 
@@ -72,7 +72,7 @@ class ArxIdentificationEnv(gym.Env):
         self.A = 0.9
         self.B = 0.1
 
-        self.std_noise = 0.015 #  noise standard deviation
+        self.std_noise = 0.03 #  noise standard deviation
         self.std_x0 = 0.3
         self.S0 = np.diag([0.01, 0.01]) # parameter random walk covariance
 
@@ -83,6 +83,7 @@ class ArxIdentificationEnv(gym.Env):
         self.high_state = 2
 
         self.leaky = leaky
+        self.episode_len = episode_len
 
         self.action_space = spaces.Box(low=self.min_action, high=self.max_action, shape=(1,), dtype=np.float32)
         self.observation_space = spaces.Box(low=self.low_state, high=self.high_state, shape=(4,), dtype=np.float32)
@@ -98,9 +99,9 @@ class ArxIdentificationEnv(gym.Env):
         x_new = self.A * x_old + self.B * u + self.std_noise*np.random.randn()
 
         phi_t = np.array([x_new, u]).reshape(1, -1)
-        I_t = phi_t * np.transpose(phi_t)
+        I_t = phi_t * np.transpose(phi_t)/(self.std_noise**2)
 
-        if self.leaky == 'KAL':
+        if self.leaky == 'KAL': #
             I_new = np.linalg.inv(np.linalg.inv(self.I + I_t) + self.S0)
         elif self.leaky == 'RLS':
             I_new =  0.9*np.copy(self.I) + I_t
@@ -109,7 +110,8 @@ class ArxIdentificationEnv(gym.Env):
         else:
             raise ValueError("Wrong option for leaky parameter!")
 
-        reward = np.min(np.linalg.eigvals(I_new)) - np.min(np.linalg.eigvals(self.I))
+        reward = np.min(np.linalg.eigvals(I_new)) - np.min(np.linalg.eigvals(self.I)) # reward is the increase of the smallest eigenvalue of I
+        reward = reward/1000
 
         self.I = I_new
         self.sys_state = x_new
@@ -126,7 +128,7 @@ class ArxIdentificationEnv(gym.Env):
         done = False
 
         self.count = self.count + 1
-        if self.count == 300:
+        if self.count == self.episode_len:
             done = True
 
         return np.copy(self.env_state), reward, done, {}

@@ -30,9 +30,9 @@ if __name__ == '__main__':
 
     I.append(env.I)
     while True:
-        action = env.action_space.sample()
+        #action = env.action_space.sample()
         #action = 1.0 * np.random.randn(1)
-        #action = np.array([1.0]) #
+        action = np.array([1.0]) #
         obs, reward, done, _ = env.step(action)
 
         ACT.append(action) # Ai

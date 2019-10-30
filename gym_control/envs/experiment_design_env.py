@@ -90,8 +90,8 @@ class ExperimentDesignEnv(gym.Env):
         self.min_action = 1
         self.max_action = 1
 
-        self.low_state = np.array([-2, -2])
-        self.high_state = np.array([2, 2])
+        self.low_state = np.array([-2, -2, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf])
+        self.high_state = np.array([2,  2,  np.inf,  np.inf,  np.inf,  np.inf,  np.inf,  np.inf])
 
         self.leaky = leaky
         self.episode_len = episode_len
@@ -122,7 +122,7 @@ class ExperimentDesignEnv(gym.Env):
             I_new = self.I + I_t
         else:
             raise ValueError("Unknown leaky option!")
-        reward = np.min(np.linalg.eigvals(I_new)) - np.min(np.linalg.eigvals(self.I)) # reward is the increase of the smallest eigenvalue of I
+        reward = np.min(np.abs(np.linalg.eigvals(I_new))) - np.min(np.abs(np.linalg.eigvals(self.I))) # reward is the increase of the smallest eigenvalue of I. abs required for numerical issues...
 
         self.I = I_new
 
@@ -144,7 +144,7 @@ class ExperimentDesignEnv(gym.Env):
 
     def reset(self):
         self.sys_state = self.std_y * np.random.randn() * np.ones(self.n_sys_states) # initial system state
-        self.sys_state = np.clip(self.sys_state, self.low_state, self.high_state)
+        self.sys_state = np.clip(self.sys_state, self.low_state[0:self.n_sys_states], self.high_state[0:self.n_sys_states])
         self.I0 = 1e-3*np.eye(self.n_theta) # initial information matrix
         self.I = np.copy(self.I0)
         self.I_state = logchol_encode(self.I)
